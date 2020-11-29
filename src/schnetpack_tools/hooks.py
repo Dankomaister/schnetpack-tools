@@ -2,8 +2,10 @@ from schnetpack.train.hooks import Hook
 from torch.optim.lr_scheduler import StepLR
 
 class FindBestLearningRateHook(Hook):
-	"""Hook for finding a good learning rate.
+	r"""
+	Hook for finding a good learning rate.
 	Results are written to a find_lr.csv file.
+	
 	Args:
 		final_lr (float): The final learning rate.
 		steps (int): Total number of learning rate steps.
