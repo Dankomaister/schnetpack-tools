@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-	name = 'schnetpack-tools',
+	name = 'schnetpack_tools',
 	version = '0.1',
 	author = 'Daniel Hedman',
 	author_email = 'daniel.hedman@ltu.se',
