@@ -41,20 +41,20 @@ class OpenCLEnvironmentProvider(BaseEnvironmentProvider):
 		scaled_positions[:,0:3] = np.linalg.solve(cell.T, positions.T).T.astype(np.float64)
 
 		neighborhood_idx = -np.ones((n_atoms,self.max_nbh), dtype=np.int32, order='C')
-		offset = np.zeros((n_atoms,self.max_nbh), dtype=cl.cltypes.short3, order='C') # Change to integer to improve perf.
+		offsets = np.zeros((n_atoms,self.max_nbh), dtype=cl.cltypes.short3, order='C') # Change to integer to improve perf.
 
 		scaled_positions_buffer = cl.Buffer(self.ctx, self.mf.READ_ONLY  | self.mf.COPY_HOST_PTR, hostbuf=scaled_positions)
 		neighborhood_idx_buffer = cl.Buffer(self.ctx, self.mf.READ_WRITE | self.mf.COPY_HOST_PTR, hostbuf=neighborhood_idx)
-		offset_buffer           = cl.Buffer(self.ctx, self.mf.READ_WRITE | self.mf.COPY_HOST_PTR, hostbuf=offset)
+		offsets_buffer           = cl.Buffer(self.ctx, self.mf.READ_WRITE | self.mf.COPY_HOST_PTR, hostbuf=offsets)
 
 		cell = cell.astype(np.float64)
-		self.kernel.neighbor_list(self.queue, (n_atoms,), None, scaled_positions_buffer, offset_buffer, neighborhood_idx_buffer,
+		self.kernel.neighbor_list(self.queue, (n_atoms,), None, scaled_positions_buffer, offsets_buffer, neighborhood_idx_buffer,
 			n_atoms, self.max_nbh, self.cutoff,
 			cell[0,0], cell[0,1], cell[0,2],
 			cell[1,0], cell[1,1], cell[1,2],
 			cell[2,0], cell[2,1], cell[2,2])
 
-		e1 = cl.enqueue_copy(self.queue, offset, offset_buffer)
+		e1 = cl.enqueue_copy(self.queue, offsets, offsets_buffer)
 		e2 = cl.enqueue_copy(self.queue, neighborhood_idx, neighborhood_idx_buffer)
 
 		e2.wait()
@@ -64,10 +64,10 @@ class OpenCLEnvironmentProvider(BaseEnvironmentProvider):
 		if I == 0:
 			I = 1
 
-		offset_out = np.zeros((n_atoms,I,3), dtype=np.float64, order='C')
+		offset = np.zeros((n_atoms,I,3), dtype=np.float64, order='C')
 		e1.wait()
-		offset_out[:,:,0] = offset[:,0:I]['x']
-		offset_out[:,:,1] = offset[:,0:I]['y']
-		offset_out[:,:,2] = offset[:,0:I]['z']
+		offset[:,:,0] = offsets[:,0:I]['x']
+		offset[:,:,1] = offsets[:,0:I]['y']
+		offset[:,:,2] = offsets[:,0:I]['z']
 
-		return neighborhood_idx[:,0:I], offset_out
+		return neighborhood_idx[:,0:I], offset
