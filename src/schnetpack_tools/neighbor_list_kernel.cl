@@ -1,5 +1,5 @@
 
-__kernel void neighbor_list(__global double3 *scaled_positions, __global double3 *offset, __global int *neighborhood_idx,
+__kernel void neighbor_list(__global double3 *scaled_positions, __global short3 *offset, __global int *neighborhood_idx,
 	uint n_atoms, uint max_nbh, double cutoff,
 	double c11, double c12, double c13,
 	double c21, double c22, double c23,
