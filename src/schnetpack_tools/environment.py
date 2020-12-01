@@ -41,7 +41,7 @@ class OpenCLEnvironmentProvider(BaseEnvironmentProvider):
 		scaled_positions[:,0:3] = np.linalg.solve(cell.T, positions.T).T.astype(np.float64)
 
 		neighborhood_idx = -np.ones((n_atoms,self.max_nbh), dtype=np.int32, order='C')
-		offsets = np.zeros((n_atoms,self.max_nbh), dtype=cl.cltypes.short3, order='C') # Change to integer to improve perf.
+		offsets = np.zeros((n_atoms,self.max_nbh), dtype=cl.cltypes.char3, order='C') # Change to integer to improve perf.
 
 		scaled_positions_buffer = cl.Buffer(self.ctx, self.mf.READ_ONLY  | self.mf.COPY_HOST_PTR, hostbuf=scaled_positions)
 		neighborhood_idx_buffer = cl.Buffer(self.ctx, self.mf.READ_WRITE | self.mf.COPY_HOST_PTR, hostbuf=neighborhood_idx)

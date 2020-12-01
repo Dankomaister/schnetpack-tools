@@ -1,5 +1,5 @@
 
-__kernel void neighbor_list(__global double3 *scaled_positions, __global short3 *offsets, __global int *neighborhood_idx,
+__kernel void neighbor_list(__global double3 *scaled_positions, __global char3 *offsets, __global int *neighborhood_idx,
 	uint n_atoms, uint max_nbh, double cutoff,
 	double c11, double c12, double c13,
 	double c21, double c22, double c23,
@@ -47,7 +47,7 @@ __kernel void neighbor_list(__global double3 *scaled_positions, __global short3 
 			if (R_sq < cutoff_sq)
 			{
 				neighborhood_idx[k] = j;
-				offsets[k] = convert_short3(offset);
+				offsets[k] = convert_char3(offset);
 				k++;
 			}
 		}
