@@ -46,7 +46,7 @@ __kernel void neighbor_list(__global double3 *scaled_positions, __global short3 
 			if (R_sq < cutoff_sq)
 			{
 				neighborhood_idx[k] = j;
-				offset[k] = o;
+				offset[k] = (double3)(o);
 				k++;
 			}
 		}
