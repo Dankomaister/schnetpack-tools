@@ -25,6 +25,7 @@ class FindBestLearningRateHook(Hook):
 		if self.i > self.steps:
 			trainer._stop = True
 			self.fid.close()
+			return
 
 		line  = str(self.i)
 		line += str(',')
