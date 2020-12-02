@@ -31,6 +31,7 @@ class FindBestLearningRateHook(Hook):
 		line += str(trainer.optimizer.param_groups[0]['lr'])
 		line += str(',')
 		line += str(loss.data.cpu().numpy())
+		line += str('\n')
 
 		#self.fid.write('%3i,%12.5e,%10.5f\n' % (self.i, trainer.optimizer.param_groups[0]['lr'], loss.data.cpu().numpy()))
 		self.fid.write(line)
