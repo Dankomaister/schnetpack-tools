@@ -28,7 +28,7 @@ class OpenCLEnvironmentProvider(BaseEnvironmentProvider):
 		self.ctx = cl.Context(devices)
 		self.queue = cl.CommandQueue(self.ctx)
 		self.kernel = cl.Program(self.ctx, self.kernel_code).build()
-		print('OpenCLEnvironmentProvider initialized on: %s' % devices[0])
+		#print('OpenCLEnvironmentProvider initialized on: %s' % devices[0])
 
 	def get_environment(self, atoms):
 		if self.kernel is None:
