@@ -9,7 +9,7 @@ class R2Loss(object):
 		self.gamma = gamma
 
 	def r2_err(self, y, yp):
-		return torch.sum((y - yp) ** 2) / torch.sum((y - torch.mean(y, keepdim=True)) ** 2)
+		return torch.sum((y - yp) ** 2) / torch.sum((y - torch.mean(y)) ** 2)
 
 	def get_loss(self, batch, result):
 		with torch.no_grad():
