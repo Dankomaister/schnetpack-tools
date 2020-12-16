@@ -1,7 +1,7 @@
 import torch
 
-class R2loss(object):
-	"""docstring for R2loss"""
+class R2Loss(object):
+	"""docstring for R2Loss"""
 	def __init__(self, alpha=1.0, beta=1.0, gamma=1.0):
 
 		self.alpha = alpha
