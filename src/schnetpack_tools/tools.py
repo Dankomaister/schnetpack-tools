@@ -207,7 +207,7 @@ class IterativeDatasetReduction():
 		print('Reduced/Remaining images: %i/%i' % (len(self.idx_red), len(self.idx_rem)))
 		print('')
 
-	def reduce(device, n_epochs, patience=100, threshold_ratio=0.0001, log_remaining=True):
+	def reduce(self, device, n_epochs, patience=100, threshold_ratio=0.0001, log_remaining=True):
 
 		while True:
 			self.train(device, n_epochs, patience, threshold_ratio)
