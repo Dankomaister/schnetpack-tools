@@ -201,10 +201,10 @@ class IterativeDatasetReduction():
 		else:
 			1+1
 
-		print('           Failed images: %i' % len(I))
-		print('            Added images: %i' % len(J))
-		print(' Percentage of remaining: %6.2f%' % percentage)
-		print('Reduced/Remaining images: %i/%i' % (len(self.idx_red), len(self.idx_rem)))
+		print('            Failed images: %i' % len(I))
+		print('             Added images: %i' % len(J))
+		print('  Percentage of remaining: %5.2f' % percentage)
+		print(' Reduced/Remaining images: %i/%i' % (len(self.idx_red), len(self.idx_rem)))
 		print('')
 
 	def reduce(self, device, n_epochs, patience=100, threshold_ratio=0.0001, log_remaining=True):
