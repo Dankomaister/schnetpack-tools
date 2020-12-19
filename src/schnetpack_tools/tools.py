@@ -9,13 +9,13 @@ class IterativeDatasetReduction():
 		batch_size,
 		num_workers,
 		loss_fn,
-		frac=0.02,
 		n_atom_basis=128,
 		n_layers=2,
 		n_filters=128,
 		n_interactions=3,
 		cutoff=5.0,
 		n_gaussians=25,
+		frac=0.02,
 		shm=True
 	):
 
