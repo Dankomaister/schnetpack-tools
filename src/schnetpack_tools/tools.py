@@ -173,16 +173,21 @@ class IterativeDatasetReduction():
 		fid.close()
 
 		I = np.where(passfail)[0]
-		np.random.shuffle(I)
+		percentage = 100 * len(I) / len(self.idx_rem)
 
-		I = I[0:round(self.frac * len(I))]
-		self.idx_red = np.append(self.idx_red, self.idx_rem[I])
-		self.idx_rem = np.delete(self.idx_rem, I)
+		if percentage > 5.0:
+			np.random.shuffle(I)
+			J = I[0:round(self.frac * len(I))]
+
+			self.idx_red = np.append(self.idx_red, self.idx_rem[J])
+			self.idx_rem = np.delete(self.idx_rem, J)
+		else:
+			1+1
 
 		print('           Failed images: %i' % len(I))
-		print(' Percentage of remaining: %6.2f %' % (100 * len(I) / len(self.idx_rem)))
-		print('        Remaining images: %i' % len(self.idx_rem))
-		print('          Reduced images: %i' % len(self.idx_red))
+		print('            Added images: %i' % len(J))
+		print(' Percentage of remaining: %6.2f%' % percentage)
+		print('Reduced/Remaining images: %i/%i' % (len(self.idx_red), len(self.idx_rem)))
 		print('')
 
 	def reduce(device, n_epochs, patience=100, threshold_ratio=0.0001, log_remaining=True):
