@@ -11,9 +11,9 @@ from schnetpack.data import AtomsData, AtomsLoader
 from schnetpack.train import Trainer, EarlyStoppingHook
 from schnetpack.train import MeanAbsoluteError, CSVHook
 from schnetpack.atomistic import Atomwise, AtomisticModel
+from schnetpack.environment import AseEnvironmentProvider
 
 from schnetpack_tools.metrics import R2Score
-from schnetpack_tools.environment import OpenCLEnvironmentProvider
 
 from schnetpack.utils import load_model
 
@@ -22,37 +22,26 @@ class IterativeDatasetReduction():
 	def __init__(
 		self,
 		dbpath,
-		lr,
-		batch_size,
-		num_workers,
-		loss_fn,
 		n_atom_basis=128,
 		n_layers=2,
 		n_filters=128,
 		n_interactions=3,
 		cutoff=5.0,
 		n_gaussians=25,
+		environment_provider=AseEnvironmentProvider,
+		properties=['energy','forces','stress'],
 		frac=0.02,
 		shm=True
 	):
 
 		### SchNet settings ###
-		self.lr = lr
-
-		self.batch_size = batch_size
-		self.num_workers = num_workers
 
 		self.n_atom_basis = n_atom_basis
 		self.n_layers = n_layers
-
 		self.n_filters = n_filters
 		self.n_interactions = n_interactions
-
 		self.cutoff = cutoff
 		self.n_gaussians = n_gaussians
-
-		self.properties = ['energy', 'forces', 'stress']
-		self.loss_fn = loss_fn
 
 		#######################
 
@@ -64,13 +53,13 @@ class IterativeDatasetReduction():
 			shutil.copyfile(dbpath, dbcopy)
 
 			self.dataset = AtomsData(dbcopy,
-				load_only=self.properties,
-				environment_provider=OpenCLEnvironmentProvider(self.cutoff, 0),
+				load_only=properties,
+				environment_provider=environment_provider(self.cutoff),
 				centering_function=None)
 		else:
 			self.dataset = AtomsData(dbpath,
-				load_only=self.properties,
-				environment_provider=OpenCLEnvironmentProvider(self.cutoff, 0),
+				load_only=properties,
+				environment_provider=environment_provider(self.cutoff),
 				centering_function=None)
 
 		self.idx_rem = np.arange(len(self.dataset))
@@ -96,7 +85,17 @@ class IterativeDatasetReduction():
 
 		return ((E_err > 0.1).byte() + (F_err > 1.0).byte() + (S_err > 0.05).byte() > 0)
 
-	def train(self, device, n_epochs, patience=100, threshold_ratio=0.0001):
+	def train(
+		self,
+		n_epochs,
+		lr,
+		loss_fn,
+		batch_size,
+		num_workers,
+		device,
+		patience=100,
+		threshold_ratio=0.0001
+	):
 
 		self.i += 1
 
@@ -109,13 +108,13 @@ class IterativeDatasetReduction():
 			num_val=num_val)
 
 		train_loader = AtomsLoader(train,
-			batch_size=round(self.batch_size),
-			num_workers=self.num_workers,
+			batch_size=round(batch_size),
+			num_workers=num_workers,
 			shuffle=True, pin_memory=True)
 
 		val_loader = AtomsLoader(val,
-			batch_size=round(self.batch_size/2),
-			num_workers=self.num_workers,
+			batch_size=round(batch_size/2),
+			num_workers=num_workers,
 			pin_memory=True)
 
 		representation = SchNet(
@@ -135,7 +134,7 @@ class IterativeDatasetReduction():
 
 		model = AtomisticModel(representation, output_modules)
 
-		optimizer = Adam(model.parameters(), lr=self.lr)
+		optimizer = Adam(model.parameters(), lr=lr)
 
 		hooks = [
 		CSVHook('log_%i' % self.i, [
@@ -150,8 +149,8 @@ class IterativeDatasetReduction():
 
 		hooks.append(EarlyStoppingHook(patience, threshold_ratio))
 
-		trainer = Trainer('output_%i/' % self.i, model, self.loss_fn, optimizer, train_loader, val_loader,
-			hooks=hooks, keep_n_checkpoints=1, checkpoint_interval=1000000)
+		trainer = Trainer('output_%i/' % self.i, model, loss_fn, optimizer, train_loader, val_loader,
+			hooks=hooks, keep_n_checkpoints=1, checkpoint_interval=n_epochs)
 
 		print('Running training!')
 		print('    Reduced images: %i' % len(reduced))
@@ -161,7 +160,13 @@ class IterativeDatasetReduction():
 
 		trainer.train(device, n_epochs)
 
-	def evaluate(self, device, log_remaining=True):
+	def evaluate(
+		self,
+		batch_size,
+		num_workers,
+		device,
+		log_remaining=True
+	):
 
 		model = load_model('output_%i/best_model' % self.i, map_location=device)
 		model.output_modules[0].create_graph = False
@@ -169,8 +174,8 @@ class IterativeDatasetReduction():
 		remaining = self.dataset.create_subset(self.idx_rem)
 
 		loader = AtomsLoader(remaining,
-			batch_size=round(self.batch_size),
-			num_workers=self.num_workers,
+			batch_size=round(batch_size/2),
+			num_workers=num_workers,
 			pin_memory=True)
 
 		print('Running evaluation!')
@@ -207,8 +212,19 @@ class IterativeDatasetReduction():
 		print(' Reduced/Remaining images: %i/%i' % (len(self.idx_red), len(self.idx_rem)))
 		print('')
 
-	def reduce(self, device, n_epochs, patience=100, threshold_ratio=0.0001, log_remaining=True):
+	def reduce(
+		self,
+		n_epochs,
+		lr,
+		loss_fn,
+		batch_size,
+		num_workers,
+		device,
+		patience=100,
+		threshold_ratio=0.0001,
+		log_remaining=True
+	):
 
 		while True:
-			self.train(device, n_epochs, patience, threshold_ratio)
-			self.evaluate(device, log_remaining)
+			self.train(n_epochs, lr, loss_fn, batch_size, num_workers, device)
+			self.evaluate(batch_size, num_workers, device)
