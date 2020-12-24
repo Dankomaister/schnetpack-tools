@@ -22,6 +22,8 @@ class IterativeDatasetReduction():
 	def __init__(
 		self,
 		dbpath,
+		properties,
+		frac=0.05,
 		n_atom_basis=128,
 		n_layers=2,
 		n_filters=128,
@@ -29,8 +31,6 @@ class IterativeDatasetReduction():
 		cutoff=5.0,
 		n_gaussians=25,
 		environment_provider=AseEnvironmentProvider,
-		properties=['energy','forces','stress'],
-		frac=0.02,
 		shm=True
 	):
 
