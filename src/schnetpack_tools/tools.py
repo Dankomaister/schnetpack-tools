@@ -23,7 +23,6 @@ class IterativeDatasetReduction():
 		self,
 		dbpath,
 		properties,
-		frac=0.05,
 		n_atom_basis=128,
 		n_layers=2,
 		n_filters=128,
@@ -31,6 +30,10 @@ class IterativeDatasetReduction():
 		cutoff=5.0,
 		n_gaussians=25,
 		environment_provider=AseEnvironmentProvider,
+		frac=0.05,
+		E_lim=0.025,
+		F_lim=0.2,
+		S_lim=0.005,
 		shm=True
 	):
 
@@ -47,6 +50,9 @@ class IterativeDatasetReduction():
 
 		self.i = 0
 		self.frac = frac
+		self.E_lim = E_lim
+		self.F_lim = F_lim
+		self.S_lim = S_lim
 
 		if shm:
 			dbcopy = '/dev/shm/' + uuid.uuid4().hex + '.db'
@@ -83,7 +89,7 @@ class IterativeDatasetReduction():
 				for e, f, s in zip(E_err, F_err, S_err):
 					fid.write('%f,%f,%f\n' % (e, f, s))
 
-		return ((E_err > 0.1).byte() + (F_err > 1.0).byte() + (S_err > 0.05).byte() > 0)
+		return ((E_err > self.E_lim).byte() + (F_err > self.F_lim).byte() + (S_err > self.S_lim).byte() > 0)
 
 	def train(
 		self,
