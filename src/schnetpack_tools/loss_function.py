@@ -22,13 +22,13 @@ class R2Loss(object):
 
 		loss = 0.0
 
-		if not torch.isinf(E_err):
+		if not torch.isnan(E_err) and not torch.isinf(E_err):
 			loss += E_err
 
-		if not torch.isinf(F_err):
+		if not torch.isnan(F_err) and not torch.isinf(F_err):
 			loss += F_err
 
-		if not torch.isinf(S_err):
+		if not torch.isnan(S_err) and not torch.isinf(S_err):
 			loss += S_err
 
 		return loss
