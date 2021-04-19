@@ -55,11 +55,7 @@ class MeanSquaredError(Metric):
 		return diff
 
 	def add_batch(self, batch, result):
-		
-		if self.atom_wise:
-			y = batch[self.target] / torch.sum(batch[Properties.atom_mask], dim=1, keepdim=True)
-		else:
-			y = batch[self.target]
+		y = batch[self.target]
 		
 		if self.model_output is None:
 			yp = result
@@ -72,6 +68,9 @@ class MeanSquaredError(Metric):
 			yp = result
 
 		diff = self._get_diff(y, yp)
+		if self.atom_wise:
+			diff /= torch.sum(batch[Properties.atom_mask], dim=1, keepdim=True)
+		
 		self.l2loss += torch.sum(diff.view(-1) ** 2).detach().cpu().data.numpy()
 		if self.element_wise:
 			self.n_entries += (
@@ -170,11 +169,7 @@ class MeanAbsoluteError(Metric):
 		return diff
 
 	def add_batch(self, batch, result):
-
-		if self.atom_wise:
-			y = batch[self.target] / torch.sum(batch[Properties.atom_mask], dim=1, keepdim=True)
-		else:
-			y = batch[self.target]
+		y = batch[self.target]
 
 		if self.model_output is None:
 			yp = result
@@ -187,10 +182,10 @@ class MeanAbsoluteError(Metric):
 				result = result[self.model_output]
 			yp = result
 
-		# print(yp, yp.shape, y.shape)
 		diff = self._get_diff(y, yp)
-		# print(diff)
-		# print()
+		if self.atom_wise:
+			diff /= torch.sum(batch[Properties.atom_mask], dim=1, keepdim=True)
+		
 		self.l1loss += (
 			torch.sum(torch.abs(diff).view(-1), 0).detach().cpu().data.numpy()
 		)
@@ -278,6 +273,9 @@ class R2Score(Metric):
 			yp = result
 
 		diff = self._get_diff(y, yp)
+		if self.atom_wise:
+			diff /= torch.sum(batch[Properties.atom_mask], dim=1, keepdim=True)
+		
 		self.y_sum += torch.sum(y.view(-1)).detach().cpu().data.numpy()
 		self.y_sq_sum += torch.sum(y.view(-1) ** 2).detach().cpu().data.numpy()
 		self.l2loss += torch.sum(diff.view(-1) ** 2).detach().cpu().data.numpy()
