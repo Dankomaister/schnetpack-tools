@@ -4,6 +4,93 @@ import numpy as np
 from schnetpack import Properties
 from schnetpack.train import Metric
 
+class MeanAbsoluteError(Metric):
+	r"""
+	Metric for mean absolute error. For non-scalar quantities, the mean of all
+	components is taken.
+	Args:
+		target (str): name of target property
+		model_output (int, str): index or key, in case of multiple outputs
+			(Default: None)
+		name (str): name used in logging for this metric. If set to `None`,
+			`MAE_[target]` will be used (Default: None)
+		element_wise (bool): set to True if the model output is an element-wise
+			property (forces, positions, ...)
+		atom_wise (bool): set to True to divide the model output by the number
+			of atoms to get eV per atom, etc.
+	"""
+
+	def __init__(
+		self,
+		target,
+		model_output=None,
+		bias_correction=None,
+		name=None,
+		element_wise=False,
+		atom_wise=False
+	):
+		name = "MAE_" + target if name is None else name
+		super(MeanAbsoluteError, self).__init__(
+			target=target,
+			model_output=model_output,
+			name=name,
+			element_wise=element_wise,
+		)
+
+		self.bias_correction = bias_correction
+		self.atom_wise = atom_wise
+
+		self.l1loss = 0.0
+		self.n_entries = 0.0
+
+	def reset(self):
+		"""Reset metric attributes after aggregation to collect new batches."""
+		self.l1loss = 0.0
+		self.n_entries = 0.0
+
+	def _get_diff(self, y, yp):
+		diff = y - yp
+		if self.bias_correction is not None:
+			diff += self.bias_correction
+		return diff
+
+	def add_batch(self, batch, result):
+
+		if self.atom_wise:
+			y = batch[self.target] / torch.sum(batch[Properties.atom_mask], dim=1, keepdim=True)
+		else:
+			y = batch[self.target]
+
+		if self.model_output is None:
+			yp = result
+		else:
+			if type(self.model_output) is list:
+				for idx in self.model_output:
+					result = result[idx]
+					# print(result.shape)
+			else:
+				result = result[self.model_output]
+			yp = result
+
+		# print(yp, yp.shape, y.shape)
+		diff = self._get_diff(y, yp)
+		# print(diff)
+		# print()
+		self.l1loss += (
+			torch.sum(torch.abs(diff).view(-1), 0).detach().cpu().data.numpy()
+		)
+		if self.element_wise:
+			self.n_entries += (
+				torch.sum(batch[Properties.atom_mask]).detach().cpu().data.numpy()
+				* y.shape[-1]
+			)
+		else:
+			self.n_entries += np.prod(y.shape)
+
+	def aggregate(self):
+		"""Aggregate metric over all previously added batches."""
+		return self.l1loss / self.n_entries
+
 class R2Score(Metric):
 	r"""
 	Metric for R square score.
@@ -16,6 +103,8 @@ class R2Score(Metric):
 			`MSE_[target]` will be used (Default: None)
 		element_wise (bool): set to True if the model output is an element-wise
 			property (forces, positions, ...)
+		atom_wise (bool): set to True to divide the model output by the number
+			of atoms to get eV per atom, etc.
 	"""
 
 	def __init__(
@@ -25,6 +114,7 @@ class R2Score(Metric):
 		bias_correction=None,
 		name=None,
 		element_wise=False,
+		atom_wise=False
 	):
 		name = "R2_" + target if name is None else name
 		super(R2Score, self).__init__(
@@ -35,6 +125,7 @@ class R2Score(Metric):
 		)
 
 		self.bias_correction = bias_correction
+		self.atom_wise = atom_wise
 
 		self.y_sum = 0.0
 		self.y_sq_sum = 0.0
@@ -55,7 +146,12 @@ class R2Score(Metric):
 		return diff
 
 	def add_batch(self, batch, result):
-		y = batch[self.target]
+		
+		if self.atom_wise:
+			y = batch[self.target] / torch.sum(batch[Properties.atom_mask], dim=1, keepdim=True)
+		else:
+			y = batch[self.target]
+		
 		if self.model_output is None:
 			yp = result
 		else:
