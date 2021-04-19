@@ -256,11 +256,7 @@ class R2Score(Metric):
 		return diff
 
 	def add_batch(self, batch, result):
-		
-		if self.atom_wise:
-			y = batch[self.target] / torch.sum(batch[Properties.atom_mask], dim=1, keepdim=True)
-		else:
-			y = batch[self.target]
+		y = batch[self.target]
 		
 		if self.model_output is None:
 			yp = result
