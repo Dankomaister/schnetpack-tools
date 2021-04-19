@@ -83,7 +83,6 @@ class MeanSquaredError(Metric):
 	def aggregate(self):
 		return self.l2loss / self.n_entries
 
-
 class RootMeanSquaredError(MeanSquaredError):
 	r"""
 	Metric for root mean square error. For non-scalar quantities, the mean of
